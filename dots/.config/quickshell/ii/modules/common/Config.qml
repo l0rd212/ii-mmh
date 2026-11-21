@@ -8409,6 +8409,10 @@ Singleton {
                     property JsonObject zerochan: JsonObject {
                         property string username: "[unset]"
                     }
+                    property JsonObject gelbooru: JsonObject {
+                        property string apiKey: "[unset]"
+                        property string userId: "[unset]"
+                    }
                 }
                 property JsonObject cornerOpen: JsonObject {
                     property bool enable: false

@@ -188,21 +188,21 @@ Singleton {
             }
         },
         "waifu.im": {
-            "name": "waifu.im",
-            "url": "https://waifu.im",
-            "api": "https://api.waifu.im/search",
+            "name": "waifu.best",
+            "url": "https://waifu.best",
+            "api": "https://api.waifu.best/images",
             "description": Translation.tr("Waifus only | Excellent quality, limited quantity"),
             "mapFunc": (response) => {
-                response = response.images
+                response = response.items
                 return response.map(item => {
                     return {
-                        "id": item.image_id,
+                        "id": item.id,
                         "width": item.width,
                         "height": item.height,
                         "aspect_ratio": item.width / item.height,
                         "tags": item.tags.map(tag => {return tag.name}).join(" "),
-                        "rating": item.is_nsfw ? "e" : "s",
-                        "is_nsfw": item.is_nsfw,
+                        "rating": item.isNsfw ? "e" : "s",
+                        "is_nsfw": item.isNsfw,
                         "md5": item.md5,
                         "preview_url": item.sample_url ?? item.url, // preview_url just says access denied (maybe i fucked up and sent too many requests idk)
                         "sample_url": item.url,
@@ -212,10 +212,9 @@ Singleton {
                     }
                 })
             },
-            "tagSearchTemplate": "https://api.waifu.im/tags",
+            "tagSearchTemplate": "https://api.waifu.best/tags?Name={{query}}",
             "tagMapFunc": (response) => {
-                return [...response.versatile.map(item => {return {"name": item}}), 
-                    ...response.nsfw.map(item => {return {"name": item}})]
+                return response.items.map(item => {return {"name": item.name}})
             }
         },
         "t.alcy.cc": {
@@ -224,30 +223,24 @@ Singleton {
             "api": "https://t.alcy.cc/",
             "description": Translation.tr("Large images | God tier quality, no NSFW."),
             "fixedTags": [
-                {
-                    "name": "ycy",
-                    "count": "General"
-                },
-                {
-                    "name": "moez",
-                    "count": "Moe"
-                },
-                {
-                    "name": "ysz",
-                    "count": "Genshin Impact"
-                },
-                {
-                    "name": "fj",
-                    "count": "Landscape"
-                },
-                {
-                    "name": "bd",
-                    "count": "Girl on white background"
-                },
-                {
-                    "name": "xhl",
-                    "count": "Shiggy"
-                },
+                { "name": "pc", "count": "Desktop wallpapers (landscape)" },
+                { "name": "mp", "count": "Mobile wallpapers (portrait)" },
+                { "name": "moe", "count": "Cute style (landscape)" },
+                { "name": "moemp", "count": "Cute style (portrait)" },
+                { "name": "ys", "count": "Genshin Impact (landscape)" },
+                { "name": "ysmp", "count": "Genshin Impact (portrait)" },
+                { "name": "miku", "count": "Hatsune Miku (landscape)" },
+                { "name": "mikump", "count": "Hatsune Miku (portrait)" },
+                { "name": "fj", "count": "Scenery (landscape)" },
+                { "name": "bd", "count": "White background (landscape)" },
+                { "name": "tx", "count": "Avatars (square)" },
+                { "name": "lai", "count": "七濑胡桃 stickers" },
+                { "name": "xhl", "count": "Little fox pack" },
+                { "name": "acg", "count": "Animated clips (mp4)" },
+                { "name": "ycy", "count": "Adaptive: landscape on desktop, portrait on mobile" },
+                { "name": "moez", "count": "Cute style (adaptive)" },
+                { "name": "ysz", "count": "Genshin Impact (adaptive)" },
+                { "name": "mikuz", "count": "Hatsune Miku (adaptive)" }
             ],
             "manualParseFunc": (responseText) => {
                 // Alcy just returns image links, each on a new line
@@ -276,7 +269,7 @@ Singleton {
     property var currentProvider: Persistent.states.booru.provider
 
     function getWorkingImageSource(url) {
-        if (url.includes('pximg.net')) {
+        if (url?.includes('pximg.net')) {
             return `https://www.pixiv.net/en/artworks/${url.substring(url.lastIndexOf('/') + 1).replace(/_p\d+\.(png|jpg|jpeg|gif)$/, '')}`;
         }
         return url;
@@ -286,8 +279,9 @@ Singleton {
         provider = provider.toLowerCase()
         if (providerList.indexOf(provider) !== -1) {
             Persistent.states.booru.provider = provider
-            root.addSystemMessage(Translation.tr("Provider set to ") + providers[provider].name
-                + (provider == "zerochan" ? Translation.tr(". Notes for Zerochan:\n- You must enter a color\n- Set your zerochan username in `sidebar.booru.zerochan.username` config option. You [might be banned for not doing so](https://www.zerochan.net/api#:~:text=The%20request%20may%20still%20be%20completed%20successfully%20without%20this%20custom%20header%2C%20but%20your%20project%20may%20be%20banned%20for%20being%20anonymous.)!") : ""))
+                        root.addSystemMessage(Translation.tr("Provider set to ") + providers[provider].name
+                + (provider == "zerochan" ? Translation.tr(". Notes for Zerochan:\n- You must enter a color\n- Set your zerochan username in `sidebar.booru.zerochan.username` config option. You [might be banned for not doing so](https://www.zerochan.net/api#:~:text=The%20request%20may%20still%20be%20completed%20successfully%20without%20this%20custom%20header%2C%20but%20your%20project%20may%20be%20banned%20for%20being%20anonymous.)!") : "")
+                + (provider == "gelbooru" ? Translation.tr(". Notes for Gelbooru:\n- An API key and user ID are required\n- Set them in `sidebar.booru.gelbooru.apiKey` and `sidebar.booru.gelbooru.userId` config options (found in your Gelbooru account options)") : ""))
         } else {
             root.addSystemMessage(Translation.tr("Invalid API provider. Supported: \n- ") + providerList.join("\n- "))
         }
@@ -305,6 +299,32 @@ Singleton {
             "images": [],
             "message": `${message}`
         })]
+    }
+
+    // Zerochan currently returns HTTP 500 with the JSON followed by leftover HTML.
+    // Keep only the "items" array so the rest of the pipeline can parse it.
+    function extractZerochanItems(text) {
+        const keyIdx = text.indexOf('"items"')
+        if (keyIdx === -1) throw new Error("no items in Zerochan response")
+        const start = text.indexOf("[", keyIdx)
+        let depth = 0, inStr = false, esc = false
+        for (let i = start; i < text.length; i++) {
+            const ch = text[i]
+            if (inStr) {
+                if (esc) esc = false
+                else if (ch === "\\") esc = true
+                else if (ch === '"') inStr = false
+            } else if (ch === '"') {
+                inStr = true
+            } else if (ch === "[") {
+                depth++
+            } else if (ch === "]") {
+                depth--
+                if (depth === 0)
+                    return '{"items":' + text.substring(start, i + 1) + '}'
+            }
+        }
+        throw new Error("unterminated items array")
     }
 
     function constructRequestUrl(tags, nsfw=true, limit=20, page=1) {
@@ -330,10 +350,10 @@ Singleton {
         else if (currentProvider === "waifu.im") {
             var tagsArray = tagString.split(" ");
             tagsArray.forEach(tag => {
-                params.push("included_tags=" + encodeURIComponent(tag));
+                params.push("IncludedTags=" + encodeURIComponent(tag.toLowerCase()));
             });
-            params.push("limit=" + Math.min(limit, 30)) // Only admin can do > 30
-            params.push("is_nsfw=" + (nsfw ? "null" : "false")) // null is random
+            params.push("PageSize=" + Math.min(limit, 30)) // Only admin can do > 30
+            params.push("IsNsfw=" + (nsfw ? "All" : "False")) // null is random
         }
         else if (currentProvider === "t.alcy.cc") {
             url += tagString
@@ -343,8 +363,14 @@ Singleton {
         else {
             params.push("tags=" + encodeURIComponent(tagString))
             params.push("limit=" + limit)
-            if (currentProvider == "gelbooru") {
+                        if (currentProvider == "gelbooru") {
                 params.push("pid=" + page)
+                const gbKey = Config.options?.sidebar?.booru?.gelbooru?.apiKey ?? ""
+                const gbUser = Config.options?.sidebar?.booru?.gelbooru?.userId ?? ""
+                if (gbKey.length > 0 && gbUser.length > 0) {
+                    params.push("api_key=" + encodeURIComponent(gbKey))
+                    params.push("user_id=" + encodeURIComponent(gbUser))
+                }
             }
             else {
                 params.push("page=" + page)
@@ -373,7 +399,7 @@ Singleton {
         var xhr = new XMLHttpRequest()
         xhr.open("GET", url)
         xhr.onreadystatechange = function() {
-            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                if (xhr.readyState === XMLHttpRequest.DONE && (xhr.status === 200 || (newResponse.provider === "zerochan" && xhr.status === 500))) {
                 try {
                     // console.log("[Booru] Raw response: " + xhr.responseText)
                     const provider = providers[currentProvider]
@@ -381,7 +407,8 @@ Singleton {
                     if (provider.manualParseFunc) {
                         response = provider.manualParseFunc(xhr.responseText)
                     } else {
-                        response = JSON.parse(xhr.responseText)
+                        const rawText = newResponse.provider === "zerochan" ? root.extractZerochanItems(xhr.responseText) : xhr.responseText
+                        response = JSON.parse(rawText)
                         response = provider.mapFunc(response)
                     }
                     // console.log("[Booru] Mapped response: " + JSON.stringify(response))
@@ -406,8 +433,11 @@ Singleton {
         }
 
         try {
-            // Required for danbooru
-            if (currentProvider == "danbooru") {
+            // Required for danbooru and konachan
+                        if (currentProvider == "danbooru") {
+                xhr.setRequestHeader("User-Agent", "end4-pC-quickshell/1.0")
+            }
+            else if (currentProvider == "konachan") {
                 xhr.setRequestHeader("User-Agent", defaultUserAgent)
             }
             else if (currentProvider == "zerochan") {
@@ -428,10 +458,13 @@ Singleton {
         }
 
         var provider = providers[currentProvider]
-        if (provider.fixedTags) {
-            root.tagSuggestion(query, provider.fixedTags)
-            return provider.fixedTags;
-        } else if (!provider.tagSearchTemplate) {
+                if (provider.fixedTags) {
+            const q = query.trim().split(/\s+/).pop().toLowerCase()
+            const filtered = q.length > 0 ? provider.fixedTags.filter(t => t.name.toLowerCase().includes(q)) : provider.fixedTags
+            root.tagSuggestion(query, filtered)
+            return filtered;
+        }
+        else if (!provider.tagSearchTemplate) {
             return
         }
         var url = provider.tagSearchTemplate.replace("{{query}}", encodeURIComponent(query))
@@ -458,8 +491,8 @@ Singleton {
         }
 
         try {
-            // Required for danbooru
-            if (currentProvider == "danbooru") {
+            // Required for danbooru and konachan
+            if (["danbooru", "konachan"].includes(currentProvider)) {
                 xhr.setRequestHeader("User-Agent", defaultUserAgent)
             }
             xhr.send()
@@ -468,4 +501,3 @@ Singleton {
         } 
     }
 }
-

@@ -16,9 +16,28 @@ Process {
         return StringUtils.shellSingleQuoteEscape(FileUtils.trimFileProtocol(filePath));
     }
 
+    function processSourceUrl() {
+        return StringUtils.shellSingleQuoteEscape(sourceUrl);
+    }
+        property string referer: ""
+
+    function curlRefererArg() {
+        if (!referer) {
+            return "";
+        }
+        return ` -e '${StringUtils.shellSingleQuoteEscape(referer)}'`;
+    }
+    
+    function curlUserAgentArg() {
+        if (!downloadUserAgent) {
+            return "";
+        }
+        return ` -H 'User-Agent: ${StringUtils.shellSingleQuoteEscape(downloadUserAgent)}'`;
+    }
+
     running: true
     command: ["bash", "-c", 
-        `mkdir -p $(dirname '${processFilePath()}'); [ -f '${processFilePath()}' ] || curl -sSL '${sourceUrl}' -o '${processFilePath()}' && file '${processFilePath()}'`
+        `mkdir -p $(dirname '${processFilePath()}'); [ -f '${processFilePath()}' ] || curl -sSL '${processSourceUrl()}'${curlUserAgentArg()}${curlRefererArg()} -o '${processFilePath()}' && file '${processFilePath()}'`
     ]
     stdout: StdioCollector {
         id: imageSizeOutputCollector

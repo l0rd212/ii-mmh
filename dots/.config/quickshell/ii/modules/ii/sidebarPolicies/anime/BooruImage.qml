@@ -31,6 +31,7 @@ Button {
         running: root.manualDownload
         filePath: root.filePath
         sourceUrl: root.imageData.preview_url ?? root.imageData.sample_url
+        referer: (root.imageData.preview_url ?? root.imageData.sample_url ?? "").includes("gelbooru.com") ? "https://gelbooru.com/" : ""
         onDone: (path, width, height) => {
             imageObject.source = ""
             imageObject.source = path
@@ -172,8 +173,11 @@ Button {
                             onClicked: {
                                 root.showActions = false;
                                 const targetPath = root.imageData.is_nsfw ? root.nsfwPath : root.downloadPath;
+                                const userAgent = Config.options?.networking?.userAgent ?? ""
+                                const userAgentHeader = userAgent ? ` -H 'User-Agent: ${StringUtils.shellSingleQuoteEscape(userAgent)}'` : ""
+                                const refererHeader = (root.imageData.file_url ?? "").includes("gelbooru.com") ? " -e 'https://gelbooru.com/'" : ""
                                 Quickshell.execDetached(["bash", "-c", 
-                                    `mkdir -p '${targetPath}' && curl '${root.imageData.file_url}' -o '${targetPath}/${root.fileName}' && notify-send '${Translation.tr("Download complete")}' '${root.downloadPath}/${root.fileName}' -a 'Shell'`
+                                    `mkdir -p '${targetPath}' && curl -fL '${StringUtils.shellSingleQuoteEscape(root.imageData.file_url)}'${userAgentHeader}${refererHeader} -o '${targetPath}/${root.fileName}' && notify-send '${Translation.tr("Download complete")}' '${root.downloadPath}/${root.fileName}' -a 'Shell'`
                                 ])
                             }
                         }
