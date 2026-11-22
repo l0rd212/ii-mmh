@@ -1,10 +1,8 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
-import QtQuick.Effects
 import QtQuick.Layouts
 import qs.modules.common
-import qs.modules.common.functions
 import qs.modules.common.widgets
 import qs.services
 
@@ -368,17 +366,6 @@ Item {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     spacing: Appearance.sizes.elevationMargin / 2
-                    // A soft halo of the background colour behind every glyph keeps
-                    // the words readable over light parts of the wallpaper.
-                    layer.enabled: root.visible && root.page === "test" && !engine.isFinished
-                    layer.effect: MultiEffect {
-                        shadowEnabled: true
-                        shadowHorizontalOffset: 0
-                        shadowVerticalOffset: 0
-                        shadowBlur: 0.5
-                        blurMax: 16
-                        shadowColor: ColorUtils.applyAlpha(Appearance.m3colors.m3background, 0.85)
-                    }
 
                     RowLayout {
                         Layout.fillWidth: true
@@ -420,13 +407,13 @@ Item {
                                 MaterialSymbol {
                                     text: "language"
                                     iconSize: Appearance.font.pixelSize.normal
-                                    color: viewport.untypedColor
+                                    color: Appearance.colors.colSubtext
                                 }
                                 StyledText {
                                     text: TypingLanguages.languageFor(TypingLanguages.currentPack?.id)?.label
                                         ?? TypingLanguages.currentPack?.name ?? Translation.tr("Language")
                                     font.pixelSize: Appearance.font.pixelSize.small
-                                    color: viewport.untypedColor
+                                    color: Appearance.colors.colSubtext
                                 }
                             }
 

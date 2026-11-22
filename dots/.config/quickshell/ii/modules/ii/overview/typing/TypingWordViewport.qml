@@ -29,7 +29,13 @@ Item {
 
     readonly property real lineHeight: Math.round(root.fontSize * 1.62)
     readonly property real charWidth: Math.max(1, sizingMetrics.advanceWidth)
-    readonly property color untypedColor: ColorUtils.mix(Appearance.m3colors.m3onSurface, Appearance.m3colors.m3background, 0.45)
+    // A translucent shell lets the wallpaper through behind the words, where
+    // the grey of the text still to type vanishes over light patches; there it
+    // is a strong black instead. Typed text and errors keep the theme colours.
+    readonly property bool translucent: Config.options.appearance.transparency.enable
+        && Appearance.backgroundTransparency > 0
+    readonly property color inkColor: Appearance.colors.colOnSurface
+    readonly property color untypedColor: root.translucent ? "#000000" : Appearance.colors.colSubtext
     readonly property var targetWords: root.engine?.targetWords ?? []
     readonly property int currentWordIndex: root.engine?.currentWordIndex ?? 0
     readonly property string typedCurrentWord: root.wordInput(root.currentWordIndex)
@@ -91,14 +97,14 @@ Item {
         if (index >= typedCharacters.length)
             return root.untypedColor;
         if (root.blindMode)
-            return Appearance.colors.colOnSurface;
+            return root.inkColor;
         const targetChar = Array.from(target)[index];
         const typedChar = typedCharacters[index];
         const matched = root.engine?.charsMatch
             ? root.engine.charsMatch(targetChar, typedChar)
             : typedChar === targetChar;
         return matched
-            ? Appearance.colors.colOnSurface
+            ? root.inkColor
             : Appearance.colors.colError;
     }
 
@@ -225,7 +231,7 @@ Item {
                                 font.family: Appearance.font.family.monospace
                                 font.pixelSize: root.fontSize
                                 font.weight: Font.Medium
-                                color: root.blindMode ? Appearance.colors.colOnSurface : Appearance.colors.colError
+                                color: root.blindMode ? root.inkColor : Appearance.colors.colError
                                 visible: wordItem.extras.length > 0
                                 opacity: root.blindMode ? 1 : 0.75
                             }
