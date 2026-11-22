@@ -380,7 +380,7 @@ MouseArea {
                     allImages.push({
                         filePath: img.preview_url,
                         fileUrl: img.file_url,
-                        fileName: "wallhaven-" + img.id || "image",
+                        fileName: (function () { const p = String(resp.provider || "image"); const id = String(img.id ?? ""); if (p === "wallhaven") return "wallhaven-" + id; return id.toLowerCase().replace(/[^a-z0-9]/g, "").startsWith(p) ? id : p + "-" + id; })(),
                         fileIsDir: false,
                         isApi: true,
                         imageData: img
