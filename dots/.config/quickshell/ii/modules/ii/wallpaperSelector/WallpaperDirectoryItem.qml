@@ -178,6 +178,7 @@ MouseArea {
                     sourceComponent: WallpaperActionButton {
                         id: button
                         buttonIcon: "more_vert"
+                        visible: !(root.fileModelData && root.fileModelData.fileUrl)
                         buttonFill: 1
 
                         onClicked: {

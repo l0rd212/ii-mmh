@@ -9,7 +9,7 @@ import Quickshell.Io
 Toolbar {
     id: imageToolbar
     z: 20
-    visible: modelData !== null
+    visible: modelData !== null && !wallpaperSelectorContent.browserMode
     padding: 6
     spacing: 6
     colBackground: Appearance.m3colors.m3surfaceContainerLow

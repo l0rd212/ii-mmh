@@ -615,6 +615,10 @@ function moveToTrashFile(modelData) {
     }
 
     function selectWallpaperPath(filePath) {
+        if (/^https?:\/\//i.test(String(filePath || ""))) {
+            WallpaperBrowser.downloadAndApply(String(filePath), wallpaperSelectorContent.useDarkMode);
+            return;
+        }
         if (!filePath || filePath.length === 0) return;
 
         // Reset the filter before Wallpapers.changed closes this selector.
@@ -986,7 +990,6 @@ function moveToTrashFile(modelData) {
                                             } else if (quickDirButton.modelData.path === "BROWSER_MODE") {
                                                 wallpaperSelectorContent.favMode = false;
                                                 wallpaperSelectorContent.browserMode = true;
-                                                WallpaperBrowser.clearResponses();
                                             } else {
                                                 wallpaperSelectorContent.favMode = false;
                                                 wallpaperSelectorContent.browserMode = false;
@@ -1863,13 +1866,66 @@ function moveToTrashFile(modelData) {
                                 }
                             }
 
+                            // Hover actions, browser mode only: apply / download / similar
+                            Row {
+                                id: hoverActions
+                                z: 10
+                                anchors.right: parent.right
+                                anchors.bottom: parent.bottom
+                                anchors.margins: 8
+                                spacing: 6
+                                readonly property string remoteUrl: String(wpItemDelegate.fileModelData?.fileUrl ?? "")
+                                readonly property string whId: wallpaperSelectorContent.getWallhavenId(remoteUrl) ?? ""
+                                readonly property bool downloading: WallpaperBrowser.downloadingUrl === remoteUrl && remoteUrl !== ""
+                                opacity: (wpItemDelegate.containsMouse || actionsHover.hovered || downloading) ? 1 : 0
+                                visible: wallpaperSelectorContent.browserMode && remoteUrl !== "" && opacity > 0
+                                Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                                HoverHandler { id: actionsHover }
+
+                                component HoverAction: RippleButton {
+                                    property string symbol: ""
+                                    property string tip: ""
+                                    implicitWidth: 34
+                                    implicitHeight: 34
+                                    buttonRadius: height / 2
+                                    colBackground: Appearance.m3colors.m3surfaceContainerHigh
+                                    colBackgroundHover: Appearance.m3colors.m3surfaceContainerHighest
+                                    contentItem: MaterialSymbol {
+                                        anchors.centerIn: parent
+                                        horizontalAlignment: Text.AlignHCenter
+                                        iconSize: 20
+                                        color: Appearance.m3colors.m3onSurface
+                                        text: symbol
+                                    }
+                                    StyledToolTip { text: tip }
+                                }
+
+                                HoverAction {
+                                    visible: hoverActions.whId.length > 0
+                                    symbol: "image_search"
+                                    tip: Translation.tr("Search for similar images")
+                                    onClicked: wallpaperSelectorContent.searchForSimilarImages(hoverActions.whId)
+                                }
+                                HoverAction {
+                                    symbol: hoverActions.downloading ? "sync" : "download"
+                                    tip: Translation.tr("Download")
+                                    enabled: !hoverActions.downloading
+                                    onClicked: WallpaperBrowser.downloadAndApply(hoverActions.remoteUrl, Appearance.m3colors.darkmode, false)
+                                }
+                                HoverAction {
+                                    symbol: "wallpaper"
+                                    tip: Translation.tr("Set as wallpaper")
+                                    onClicked: wallpaperSelectorContent.selectWallpaperPath(hoverActions.remoteUrl)
+                                }
+                            }
+
                             onEntered: grid.keyboardNavigationActive = false
 
                             onActivated: {
                                 if (fileModelData.fileIsDir) {
                                     Wallpapers.setDirectory(fileModelData.filePath);
                                 } else {
-                                    wallpaperSelectorContent.selectWallpaperPath(fileModelData.actualPath || fileModelData.filePath);
+                                    wallpaperSelectorContent.selectWallpaperPath(fileModelData.actualPath || (wallpaperSelectorContent.browserMode ? fileModelData.fileUrl : fileModelData.filePath));
                                 }
                             }
 
@@ -2335,7 +2391,7 @@ function moveToTrashFile(modelData) {
                         id: actionToolbar
                         // Random, colour filter and the close-search button stayed in
                         // the full selector; reload moved up into the address row.
-                        visible: !wallpaperSelectorContent.compact
+                        visible: (!wallpaperSelectorContent.compact) && !wallpaperSelectorContent.browserMode
                         z: 20
                         anchors {
                             bottom: parent.bottom
@@ -2405,7 +2461,7 @@ function moveToTrashFile(modelData) {
                     WallpaperSortToolbar {
                         id: sortToolbar
                         // Sorting is a full-selector toolbar in compact mode.
-                        visible: !wallpaperSelectorContent.compact
+                        visible: (!wallpaperSelectorContent.compact) && !wallpaperSelectorContent.browserMode
                         z: 20
                         anchors {
                             left: extraOptions.right

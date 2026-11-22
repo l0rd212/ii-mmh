@@ -82,7 +82,7 @@ Toolbar {
                 if (wallpaperSelectorContent.browserMode) {
                     if (wallpaperSelectorContent.apiImages.length > 0) {
                         const randomImg = wallpaperSelectorContent.apiImages[Math.floor(Math.random() * wallpaperSelectorContent.apiImages.length)];
-                        wallpaperSelectorContent.selectWallpaperPath(randomImg.actualPath || randomImg.filePath);
+                        wallpaperSelectorContent.selectWallpaperPath(randomImg.actualPath || randomImg.fileUrl || randomImg.filePath);
                     }
                 } else if (wallpaperSelectorContent.favMode) {
                     const favs = Persistent.states.wallpaper.favourites;

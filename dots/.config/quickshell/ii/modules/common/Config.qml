@@ -8811,9 +8811,15 @@ Singleton {
                 property string service: "wallhaven" // "unsplash" or "wallhaven"
                 property string sort: "favourites"
                 property bool showAnimeResults: false // only for wallhaven service
+                property string wallhavenCategories: "" // "" = follow the anime toggle; else general/anime/people digits, e.g. "111"
+                property string wallhavenPurity: "100" // sfw/sketchy/nsfw digits, e.g. "110"
+                property string wallhavenMinResolution: "2560x1440"
+                property string wallhavenRatios: "" // e.g. "16x9,21x9"
+                property string wallhavenOrder: "desc"
+                property string wallhavenTopRange: "1y"
                 property JsonObject paths: JsonObject {
                     property string download: FileUtils.trimFileProtocol(`${Directories.home}/Pictures/Wallpapers`)
-                    property string nsfw: FileUtils.trimFileProtocol(`${Directories.home}/Pictures/Wallpapers/NSFW`)
+                    property string nsfw: FileUtils.trimFileProtocol(`${Directories.home}/Pictures/Wallpapers`)
                 }
             }
 
