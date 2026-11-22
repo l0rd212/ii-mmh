@@ -327,6 +327,7 @@ Singleton {
 
                 params.push(`q=like%3A${imageId}`) // idk why but api has to be configured like this, learned it in the hard way
                 params.push(`sorting=relevance`)
+                params.push("purity=" + root.wallhavenPurityValue)
                 params.push(`page=${page}`)
                 params.push(`order=desc`)
                 root.similarImageId = imageId

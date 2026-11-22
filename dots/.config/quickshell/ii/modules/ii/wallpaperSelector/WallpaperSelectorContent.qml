@@ -647,11 +647,15 @@ function moveToTrashFile(modelData) {
         const urlStr = url.toString();
         const fileName = urlStr.split('/').pop();
         const fileNameWithoutExt = fileName.split('.')[0];
-        const match = fileNameWithoutExt.match(/^wallhaven-([a-zA-Z0-9]{6})$/i);
+        const match = fileNameWithoutExt.match(/^wallhaven[-_]([a-zA-Z0-9]{6})$/i);
         return match ? match[1] : null;
     }
     
     function searchForSimilarImages(id) {
+        if (Config.options.wallpapers.service !== "wallhaven") {
+            Config.options.wallpapers.service = "wallhaven";
+            Config.options.wallpapers.sort = "favorites";
+        }
         WallpaperBrowser.clearResponses();
         WallpaperBrowser.moreLikeThisPicture(id, 1);
         wallpaperSelectorContent.browserMode = true;
@@ -1901,7 +1905,7 @@ function moveToTrashFile(modelData) {
                                 }
 
                                 HoverAction {
-                                    visible: hoverActions.whId.length > 0
+                                    visible: false && hoverActions.whId.length > 0
                                     symbol: "image_search"
                                     tip: Translation.tr("Search for similar images")
                                     onClicked: wallpaperSelectorContent.searchForSimilarImages(hoverActions.whId)
@@ -1916,6 +1920,66 @@ function moveToTrashFile(modelData) {
                                     symbol: "wallpaper"
                                     tip: Translation.tr("Set as wallpaper")
                                     onClicked: wallpaperSelectorContent.selectWallpaperPath(hoverActions.remoteUrl)
+                                }
+                            }
+
+                            // Hover actions, local wallpapers: favourite / similar / apply / trash
+                            Row {
+                                id: localHoverActions
+                                z: 10
+                                anchors.right: parent.right
+                                anchors.bottom: parent.bottom
+                                anchors.margins: 8
+                                spacing: 6
+                                readonly property string localPath: FileUtils.trimFileProtocol(String(wpItemDelegate.fileModelData?.actualPath || wpItemDelegate.fileModelData?.filePath || ""))
+                                readonly property bool isLocalFile: !wallpaperSelectorContent.browserMode && localPath !== "" && !(wpItemDelegate.fileModelData?.fileIsDir ?? false)
+                                readonly property string whId: wallpaperSelectorContent.getWallhavenId(localPath) ?? ""
+                                readonly property bool isFavourite: (Persistent.states.wallpaper.favourites ?? []).includes(localPath)
+                                opacity: (wpItemDelegate.containsMouse || localActionsHover.hovered) ? 1 : 0
+                                visible: isLocalFile && opacity > 0
+                                Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                                HoverHandler { id: localActionsHover }
+
+                                component LocalHoverAction: RippleButton {
+                                    property string symbol: ""
+                                    property string tip: ""
+                                    property bool marked: false
+                                    implicitWidth: 34
+                                    implicitHeight: 34
+                                    buttonRadius: height / 2
+                                    colBackground: Appearance.m3colors.m3surfaceContainerHigh
+                                    colBackgroundHover: Appearance.m3colors.m3surfaceContainerHighest
+                                    contentItem: MaterialSymbol {
+                                        anchors.centerIn: parent
+                                        horizontalAlignment: Text.AlignHCenter
+                                        iconSize: 20
+                                        color: marked ? Appearance.colors.colPrimary : Appearance.m3colors.m3onSurface
+                                        text: symbol
+                                    }
+                                    StyledToolTip { text: tip }
+                                }
+
+                                LocalHoverAction {
+                                    symbol: "favorite"
+                                    marked: localHoverActions.isFavourite
+                                    tip: Translation.tr("Favourite this wallpaper")
+                                    onClicked: wallpaperSelectorContent.toggleFavourite(localHoverActions.localPath)
+                                }
+                                LocalHoverAction {
+                                    visible: false && localHoverActions.whId.length > 0
+                                    symbol: "image_search"
+                                    tip: Translation.tr("Search for similar images")
+                                    onClicked: wallpaperSelectorContent.searchForSimilarImages(localHoverActions.whId)
+                                }
+                                LocalHoverAction {
+                                    symbol: "wallpaper"
+                                    tip: Translation.tr("Set as wallpaper")
+                                    onClicked: wallpaperSelectorContent.selectWallpaperPath(localHoverActions.localPath)
+                                }
+                                LocalHoverAction {
+                                    symbol: "delete"
+                                    tip: Translation.tr("Move to trash")
+                                    onClicked: wallpaperSelectorContent.moveToTrashFile(wpItemDelegate.fileModelData)
                                 }
                             }
 

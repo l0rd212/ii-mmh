@@ -74,7 +74,7 @@ MouseArea {
         const urlStr = url.toString();
         const fileName = urlStr.split('/').pop();
         const fileNameWithoutExt = fileName.split('.')[0];
-        const match = fileNameWithoutExt.match(/^wallhaven-([a-zA-Z0-9]{6})$/i);
+        const match = fileNameWithoutExt.match(/^wallhaven[-_]([a-zA-Z0-9]{6})$/i);
         return match ? match[1] : null;
     }
 
@@ -178,7 +178,7 @@ MouseArea {
                     sourceComponent: WallpaperActionButton {
                         id: button
                         buttonIcon: "more_vert"
-                        visible: !(root.fileModelData && root.fileModelData.fileUrl)
+                        visible: false
                         buttonFill: 1
 
                         onClicked: {
