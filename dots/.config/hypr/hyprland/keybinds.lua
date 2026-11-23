@@ -39,7 +39,7 @@ hl.bind("SUPER + B", hl.dsp.global("quickshell:sidebarLeftToggle"))
 hl.bind("SUPER + O", hl.dsp.global("quickshell:sidebarLeftToggle"))
 hl.bind("SUPER + N", hl.dsp.global("quickshell:sidebarRightToggle"), { description = "Shell: Toggle right sidebar" })
 --##! Modules
-hl.bind("SUPER + Slash", hl.dsp.global("quickshell:cheatsheetToggle"), { description = "Shell: Toggle cheatsheet" })
+hl.bind("SUPER + SHIFT + code:60", hl.dsp.global("quickshell:cheatsheetToggle"), { description = "Shell: Toggle cheatsheet" })
 -- Super+Shift+N is already Next track, further down. The notes keep the same letter
 -- with the other modifier rather than moving to a key nobody would guess.
 hl.bind("SUPER + ALT + N", hl.dsp.global("quickshell:notesToggle"), { description = "Shell: Toggle notes" })
