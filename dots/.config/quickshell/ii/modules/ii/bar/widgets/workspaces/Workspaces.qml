@@ -25,7 +25,7 @@ Item {
         id: wsModel
         screen: root.QsWindow.window?.screen ?? null
         trackWindows: root.showIcons
-        includeFloating: false
+        includeFloating: true
         windowLimit: Config.options.bar.workspaces.maxWindowCount
     }
 
