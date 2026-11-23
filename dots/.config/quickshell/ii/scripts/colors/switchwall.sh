@@ -66,10 +66,14 @@ report_matugen_failure() {
 # script's process group so the caller finishing (or being killed) does not stop it.
 recolor_icons_in_background() {
     local script="$HOME/.config/quickshell/ii/scripts/colors/recolor_icons.py"
+    local _venv="${ILLOGICAL_IMPULSE_VIRTUAL_ENV:-${XDG_STATE_HOME:-$HOME/.local/state}/quickshell/.venv}"
+    _venv="${_venv/#\~/$HOME}"
+    local _py=python3
+    [[ -x "$_venv/bin/python3" ]] && _py="$_venv/bin/python3"
     if command -v setsid >/dev/null 2>&1; then
-        setsid -f python3 "$script" >/dev/null 2>&1 </dev/null
+        setsid -f "$_py" "$script" >/dev/null 2>&1 </dev/null
     else
-        nohup python3 "$script" >/dev/null 2>&1 </dev/null &
+        nohup "$_py" "$script" >/dev/null 2>&1 </dev/null &
     fi
 }
 

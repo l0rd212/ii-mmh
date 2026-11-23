@@ -218,7 +218,10 @@ class Palette:
             rows = []
             for t in self.TONES:
                 argb = palette.tone(float(t))
-                rows.append(((argb >> 16) & 255, (argb >> 8) & 255, argb & 255))
+                if isinstance(argb, (list, tuple)):  # materialyoucolor >= 2.x: [r, g, b, a]
+                    rows.append((argb[0], argb[1], argb[2]))
+                else:  # older versions: packed int
+                    rows.append(((argb >> 16) & 255, (argb >> 8) & 255, argb & 255))
             return np.array(rows, dtype=np.float32)
         # No materialyoucolor: interpolate the scheme's own colours by tone
         samples = [(0.0, (0, 0, 0)), (100.0, (255, 255, 255))]
