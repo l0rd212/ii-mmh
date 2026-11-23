@@ -63,14 +63,20 @@ function parse_workspace_map()
         end
     end
 
-    local monitors = hl.get_monitors() or {}
-    local sorted_mons = {}
-    for _, mon in ipairs(monitors) do
-        local offset = map[mon.name] or (mon.id * 6)
-        table.insert(sorted_mons, { name = mon.name, offset = offset })
-    end
-    table.sort(sorted_mons, function(a, b) return a.offset < b.offset end)
+       local names = {}
+    for _, mon in ipairs(hl.get_monitors() or {}) do table.insert(names, mon.name) end
+    table.sort(names)
 
+    local offsets = {}
+    local arr = content:match('"workspaceMap"%s*:%s*%[(.-)%]')
+    if arr then
+        for n in arr:gmatch("%d+") do table.insert(offsets, tonumber(n)) end
+    end
+
+    local sorted_mons = {}
+    for i, name in ipairs(names) do
+        table.insert(sorted_mons, { name = name, offset = offsets[i] or ((i - 1) * 10) })
+    end
     return true, map, sorted_mons
 end
 

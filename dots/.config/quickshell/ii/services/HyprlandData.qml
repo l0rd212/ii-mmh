@@ -396,7 +396,7 @@ Singleton {
                 // Ordered by Hyprland's monitor id, not by `hyprctl` order: a monitor that
                 // reconnects (e.g. HDMI on resume) keeps its id but is listed last, and the
                 // workspace map is indexed by this position.
-                root.monitors = JSON.parse(monitorsCollector.text).sort((a, b) => a.id - b.id);
+                root.monitors = JSON.parse(monitorsCollector.text).sort((a, b) => a.name.localeCompare(b.name));
 
                 if (root._monitorsNeedsUpdate) {
                     root._monitorsNeedsUpdate = false;
