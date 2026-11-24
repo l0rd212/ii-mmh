@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import os
-from time import sleep
+from time import sleep, monotonic
 import argparse
 from subprocess import Popen
 import json
@@ -56,21 +56,48 @@ def is_openrgb_running() -> bool:
             pass
     return False
 
-MAX_SERVER_START_ATTEMPTS = 5
-SERVER_START_RETRY_DELAY = 0.5
+# At boot the OpenRGB server accepts connections before its hardware scan is
+# finished (RAM/SMBus first, USB devices later). Wait until every configured
+# device is listed, up to DEVICE_WAIT_TIMEOUT seconds, then apply what we have.
+DEVICE_WAIT_TIMEOUT = 30.0
+DEVICE_WAIT_DELAY = 1.0
 
-def get_client(name: str = "quickshell"):
-    for attempt in range(MAX_SERVER_START_ATTEMPTS):
+def get_client(name: str = "quickshell", expected: int = 0):
+    deadline = monotonic() + DEVICE_WAIT_TIMEOUT
+    best = None
+    while True:
         try:
-            return OpenRGBClient(name=name)
+            client = OpenRGBClient(name=name)
+            if len(client.devices) >= expected:
+                if best is not None and best is not client:
+                    try:
+                        best.disconnect()
+                    except Exception:
+                        pass
+                return client
+            # Device list incomplete: scan not finished. Keep the fullest
+            # client as fallback and retry with a fresh connection.
+            if best is None or len(client.devices) > len(best.devices):
+                if best is not None:
+                    try:
+                        best.disconnect()
+                    except Exception:
+                        pass
+                best = client
+            else:
+                try:
+                    client.disconnect()
+                except Exception:
+                    pass
         except Exception:
             if not is_openrgb_running():
                 try:
                     Popen(["openrgb", "--server", "--startminimized"])
                 except Exception:
                     pass
-            sleep(SERVER_START_RETRY_DELAY)
-    return None
+        if monotonic() >= deadline:
+            return best
+        sleep(DEVICE_WAIT_DELAY)
 
 TRANSITION_DURATION = args.duration
 INTERPOLATION_STEPS = args.interpolation_steps
@@ -100,7 +127,15 @@ devices = openrgb_opts.get("devices", [])
 if not any(d.get("enabled", False) for d in devices):
     sys.exit(0)
 
-client = get_client()
+expected_devices = (
+    max(
+        (d["id"] for d in devices if d.get("enabled", False) and d.get("id") is not None),
+        default=-1,
+    )
+    + 1
+)
+
+client = get_client(expected=expected_devices)
 if client is None:
     sys.exit(0)
 
