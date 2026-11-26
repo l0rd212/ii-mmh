@@ -291,8 +291,9 @@ Singleton {
             if (iconExists("zen-browser")) return "zen-browser";
             if (iconExists("zen")) return "zen";
         }
+        if (str.toLowerCase().includes("spotify") && iconExists("spotify-launcher"))
+            return "spotify-launcher";
         if (str.includes("prism")) {
-            if (iconExists("prismlauncher")) return "prismlauncher";
             if (iconExists("prism_launcher")) return "prism_launcher";
             if (iconExists("org.prismlauncher.PrismLauncher")) return "org.prismlauncher.PrismLauncher";
         }
